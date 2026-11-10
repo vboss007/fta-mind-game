@@ -1,11 +1,12 @@
 // FTA Mind Game service worker. Bump VERSION whenever any file changes.
-const VERSION = "fta-mind-v2";
+const VERSION = "fta-mind-v3";
 const FILES = [
   "./",
   "index.html",
   "avatar.js",
   "manifest.webmanifest",
   "icons/tier1-logo.svg",
+  "icons/tier1-logo-black.svg",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/apple-touch-icon.png",

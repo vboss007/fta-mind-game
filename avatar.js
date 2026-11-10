@@ -141,6 +141,8 @@
     const ink = onDark ? "#f4f5f7" : INK;
     const L = 82, R = 118, Y = 74;
     switch (style) {
+      case "closed":
+        return `<path d="M${L - 8} ${Y} Q${L} ${Y + 7} ${L + 8} ${Y}" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M${R - 8} ${Y} Q${R} ${Y + 7} ${R + 8} ${Y}" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
       case "dot":
         return `<circle cx="${L}" cy="${Y}" r="5.5" fill="${ink}"/><circle cx="${R}" cy="${Y}" r="5.5" fill="${ink}"/>`;
       case "happy":
@@ -187,24 +189,45 @@
   /* ---------- clothes ---------- */
   const TORSO = "M66 140 Q66 126 82 124 L118 124 Q134 126 134 140 L138 194 L62 194 Z";
 
-  function shirt(p, f) {
+  // Tier 1 logo printed on every shirt: white ink on dark shirts, black ink on light ones.
+  const LOGO_W = "icons/tier1-logo.svg", LOGO_B = "icons/tier1-logo-black.svg", LOGO_AR = 93.6 / 517.28;
+  function logo(x, y, w, onColour) {
+    return `<image href="${isLight(onColour) ? LOGO_B : LOGO_W}" x="${x}" y="${y}" width="${w}" height="${(w * LOGO_AR).toFixed(2)}" preserveAspectRatio="xMidYMid meet"/>`;
+  }
+
+  function shirt(p, f, sit) {
     const c = p.c, d = shade(c, -0.18);
+    const long = p.kind === "hoodie" || p.kind === "track";
     let s = "";
     if (p.kind === "hoodie") s += `<path d="M76 126 Q100 108 124 126 L118 134 Q100 122 82 134 Z" fill="${d}"/>`;
-    // sleeves
-    s += `<path d="M68 132 L50 160" stroke="${c}" stroke-width="20" stroke-linecap="round"/><path d="M132 132 L150 160" stroke="${c}" stroke-width="20" stroke-linecap="round"/>`;
-    if (p.kind === "hoodie" || p.kind === "track") s += `<path d="M50 160 L46 178" stroke="${c}" stroke-width="18" stroke-linecap="round"/><path d="M150 160 L154 178" stroke="${c}" stroke-width="18" stroke-linecap="round"/>`;
+    if (sit) {
+      // seated meditation: upper arms down the sides, forearms resting on the knees
+      s += `<path d="M68 132 L58 166" stroke="${c}" stroke-width="20" stroke-linecap="round"/><path d="M132 132 L142 166" stroke="${c}" stroke-width="20" stroke-linecap="round"/>`;
+      s += `<path d="M58 168 L66 204" stroke="${long ? c : f}" stroke-width="16" stroke-linecap="round"/><path d="M142 168 L134 204" stroke="${long ? c : f}" stroke-width="16" stroke-linecap="round"/>`;
+    } else {
+      s += `<path d="M68 132 L50 160" stroke="${c}" stroke-width="20" stroke-linecap="round"/><path d="M132 132 L150 160" stroke="${c}" stroke-width="20" stroke-linecap="round"/>`;
+      if (long) s += `<path d="M50 160 L46 178" stroke="${c}" stroke-width="18" stroke-linecap="round"/><path d="M150 160 L154 178" stroke="${c}" stroke-width="18" stroke-linecap="round"/>`;
+    }
     s += `<path d="${TORSO}" fill="${c}"/>`;
     if (p.kind === "polo") s += `<path d="M86 124 L100 140 L114 124 Z" fill="${d}"/><path d="M86 124 L94 136 L80 132 Z M114 124 L106 136 L120 132 Z" fill="${shade(c, 0.25)}"/>`;
     if (p.kind === "tee") s += `<path d="M88 124 Q100 134 112 124" stroke="${d}" stroke-width="4" fill="none"/>`;
     if (p.kind === "stripe") s += [146, 162, 178].map((y) => `<rect x="64" y="${y}" width="73" height="7" fill="${p.c2}"/>`).join("");
-    if (p.kind === "jersey") s += `<text x="100" y="176" text-anchor="middle" font-family="Oswald,Impact,sans-serif" font-weight="700" font-size="40" fill="${p.c2}">1</text><path d="M88 124 L100 136 L112 124" stroke="${p.c2}" stroke-width="4" fill="none"/>`;
+    if (p.kind === "jersey") s += `<text x="100" y="184" text-anchor="middle" font-family="Oswald,Impact,sans-serif" font-weight="700" font-size="34" fill="${p.c2}">1</text><path d="M88 124 L100 136 L112 124" stroke="${p.c2}" stroke-width="4" fill="none"/>`;
     if (p.kind === "hoodie") s += `<path d="M80 168 L120 168 L116 188 L84 188 Z" fill="${d}"/><path d="M94 132 L92 152 M106 132 L108 152" stroke="${shade(c, 0.4)}" stroke-width="2.5"/>`;
     if (p.kind === "track") s += `<path d="M100 126 L100 194" stroke="${shade(c, 0.35)}" stroke-width="3"/><path d="M66 140 L62 194 M134 140 L138 194" stroke="${p.c2}" stroke-width="5"/><path d="M88 124 L100 134 L112 124" stroke="${p.c2}" stroke-width="5" fill="none"/>`;
+    // Tier 1 logo
+    if (p.kind === "track") s += logo(105, 140, 29, c);
+    else if (p.kind === "polo") s += logo(102, 146, 31, c);
+    else if (p.kind === "jersey") s += logo(80, 136, 40, c);
+    else if (p.kind === "stripe") s += `<rect x="74" y="133" width="52" height="11" fill="${c}"/>` + logo(77, 134.5, 46, c);
+    else s += logo(76, 146, 48, c);
     // hands
-    const long = p.kind === "hoodie" || p.kind === "track";
-    s += `<circle cx="${long ? 45 : 48}" cy="${long ? 186 : 170}" r="10" fill="${f}"/><circle cx="${long ? 155 : 152}" cy="${long ? 186 : 170}" r="10" fill="${f}"/>`;
-    if (!long) s += `<path d="M52 162 L48 168 M148 162 L152 168" stroke="${f}" stroke-width="14" stroke-linecap="round"/>`;
+    if (sit) {
+      s += `<circle cx="67" cy="206" r="9" fill="${f}"/><circle cx="133" cy="206" r="9" fill="${f}"/><circle cx="67" cy="206" r="3.2" fill="none" stroke="${shade(f, -0.35)}" stroke-width="1.6"/><circle cx="133" cy="206" r="3.2" fill="none" stroke="${shade(f, -0.35)}" stroke-width="1.6"/>`;
+    } else {
+      s += `<circle cx="${long ? 45 : 48}" cy="${long ? 186 : 170}" r="10" fill="${f}"/><circle cx="${long ? 155 : 152}" cy="${long ? 186 : 170}" r="10" fill="${f}"/>`;
+      if (!long) s += `<path d="M52 162 L48 168 M148 162 L152 168" stroke="${f}" stroke-width="14" stroke-linecap="round"/>`;
+    }
     return s;
   }
 
@@ -213,6 +236,17 @@
     if (p.kind === "shorts") s += `<path d="M64 186 L136 186 L134 214 L104 214 L100 200 L96 214 L66 214 Z" fill="${p.c}"/>`;
     if (p.kind === "skirt") s += `<path d="M64 186 L136 186 L146 214 L54 214 Z" fill="${p.c}"/><path d="M78 190 L72 214 M100 190 L100 214 M122 190 L128 214" stroke="${shade(p.c, -0.12)}" stroke-width="2"/>`;
     if (p.kind === "long") s += `<path d="M64 186 L136 186 L132 230 L104 230 L100 204 L96 230 L68 230 Z" fill="${p.c}"/>` + (p.c2 ? `<path d="M66 192 L69 228 M134 192 L131 228" stroke="${p.c2}" stroke-width="4"/>` : "");
+    return s;
+  }
+
+  // seated, cross-legged: knees out wide, feet tucked in front
+  function sitLegs(pp, shp, f) {
+    const legC = pp.kind === "long" ? pp.c : f;
+    let s = `<path d="M60 200 Q60 186 80 186 L120 186 Q140 186 140 200 Z" fill="${pp.kind === "skirt" || pp.kind === "shorts" ? pp.c : legC}"/>`;
+    s += `<path d="M100 214 Q76 198 50 206 Q38 214 48 224 Q74 232 100 222 Z" fill="${legC}"/><path d="M100 214 Q124 198 150 206 Q162 214 152 224 Q126 232 100 222 Z" fill="${legC}"/>`;
+    if (pp.kind === "shorts" || pp.kind === "skirt") s += `<path d="M58 196 Q80 190 100 204 Q120 190 142 196 L146 210 Q122 204 100 214 Q78 204 54 210 Z" fill="${pp.c}"/>`;
+    if (pp.kind === "long" && pp.c2) s += `<path d="M54 208 Q76 202 98 214 M146 208 Q124 202 102 214" stroke="${pp.c2}" stroke-width="3" fill="none"/>`;
+    s += `<ellipse cx="80" cy="224" rx="14" ry="7" fill="${shp.c}"/><ellipse cx="120" cy="224" rx="14" ry="7" fill="${shp.c}"/><path d="M68 226 L92 226 M108 226 L132 226" stroke="${shp.c2}" stroke-width="2"/>`;
     return s;
   }
 
@@ -256,18 +290,21 @@
     const f = /^#[0-9a-f]{6}$/i.test(c.fur) ? c.fur : "#e07a2e";
     const hp = item("hat", c.hat).p, sp = item("shirt", c.shirt).p, pp = item("pants", c.pants).p, shp = item("shoes", c.shoes).p, ap = item("acc", c.acc).p;
     const headOnly = opts && opts.headOnly;
+    const sit = !!(opts && opts.pose === "meditate");
     const vb = headOnly ? "30 0 140 140" : "20 0 180 244";
     let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${size}" height="${headOnly ? size : Math.round(size * 244 / 180)}" aria-hidden="true">`;
     if (!headOnly) {
       s += accBack(ap);
-      s += pants(pp, f) + shoes(shp);
+      s += sit ? "" : pants(pp, f) + shoes(shp);
       s += `<path d="${TORSO}" fill="${f}"/>`;
-      s += shirt(sp, f);
+      if (sit) s += sitLegs(pp, shp, f);
+      s += shirt(sp, f, sit);
       s += `<rect x="88" y="116" width="24" height="14" fill="${f}"/>`;
     }
-    s += head(animal, f, c.eyes);
+    s += head(animal, f, (opts && opts.eyes) || c.eyes);
     s += hat(hp);
-    s += headOnly ? (ap.kind === "shades" || ap.kind === "phones" ? accFront(ap) : "") : accFront(ap);
+    const faceAcc = ap.kind === "shades" || ap.kind === "phones" || ap.kind === "medal";
+    s += headOnly ? (ap.kind === "shades" || ap.kind === "phones" ? accFront(ap) : "") : (sit && !faceAcc ? "" : accFront(ap));
     return s + "</svg>";
   }
 
